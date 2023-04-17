@@ -1,45 +1,44 @@
 'use client';
 import { Inter } from 'next/font/google'
-import { DndProvider } from 'react-dnd'
-import { HTML5Backend } from 'react-dnd-html5-backend'
-import { Canvas } from './Canvas'
-import { AddSource } from './AddSource'
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { AddSource } from './AddSource';
+import { Canvas } from './Canvas';
 import { useState } from 'react'
 import { CircularProgress } from '@mui/material';
-import { highlight, languages } from 'prismjs/components/prism-core';
-import 'prismjs/components/prism-clike';
-import 'prismjs/components/prism-javascript';
-import 'prismjs/themes/prism.css';
+import { styles } from './styles';
 
 const inter = Inter({ subsets: ['latin'] })
 
 export default function Home() {
   const [boxes, setBoxes] = useState({
-    1: { top: 20, left: 80, title: 'New Source 1' },
+    1: { top: 20, left: 80, title: '/usr/src/app/job_file.py' },
     2: { top: 180, left: 20, title: 'New Source 2' },
   });
   const [jobID, setJobID] = useState(-1);
   const [jobRes, setJobRes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [code, setCode] = React.useState('# Type your Spark jobs here.');
-  async function sendRequest() {
+
+  const sendRequest = async (code) => {
     setIsLoading(true);
+    console.log(code);
     const requestOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: '/usr/src/app/job_file.py' })
+      body: JSON.stringify({ data: code })
     };
-    const response = await fetch('/submit', requestOptions);
+    const response = await fetch('http://127.0.0.1:3000/submit', requestOptions);
     const data = await response.json();
     setJobRes(data.data);
     setJobID(data.id);
     setIsLoading(false);
   }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-16">
       <div className='py-4'>
         <AddSource className='my-2' boxes={boxes} setBoxes={setBoxes} />
-        <button className="group my-2 rounded-lg border border-neutral-700 bg-neutral-800/30 px-4 py-4 transition-colors hover:border-gray-600 hover:bg-gray-700" onClick={sendRequest}>Test Request</button>
+        <button className="group my-2 rounded-lg border border-neutral-700 bg-neutral-800/30 px-4 py-4 transition-colors hover:border-gray-600 hover:bg-gray-700" onClick={async () => await sendRequest(boxes[1].title)}>Submit Code</button>
       </div>
       <div className='py-4'>
         {isLoading ? 
@@ -52,22 +51,12 @@ export default function Home() {
         }
       </div>
       <div>
-        <Editor
-          value={code}
-          onValueChange={code => setCode(code)}
-          highlight={code => highlight(code, languages.python)}
-          padding={10}
-          style={{
-            fontFamily: '"Fira code", "Fira Mono", monospace',
-            fontSize: 12,
-          }}
-        />
       </div>
-      {/* <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px]">
+      <div className={styles.home.dragArea}>
         <DndProvider backend={HTML5Backend}>
           <Canvas boxes={boxes} setBoxes={setBoxes} />
         </DndProvider>
-      </div> */}
+      </div>
     </main>
   )
 }

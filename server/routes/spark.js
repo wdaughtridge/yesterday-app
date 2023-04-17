@@ -4,8 +4,7 @@ var schedule = require('../lib/schedule');
 const fs = require('fs');
 
 router.post('/', function(req, res, next) {
-  // TODO: ask scheduler to add job file to queue.
-  const path = req.body.path;
+  const path = req.body.data;
 
   schedule(path).then((job) => {
     const [status, id] = job;
