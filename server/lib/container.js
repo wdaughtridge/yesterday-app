@@ -1,4 +1,5 @@
 const { execSync } = require('node:child_process');
+const fs = require('fs');
 
 let crypto;
 try {
@@ -13,19 +14,13 @@ class SparkInstance {
         this.img = docker_image;
         this.ver = image_version;
         this.id = null;
-        this.out = null;
-        this.err = null;
-    }
-    get host() {
-        return this.id ? this.id.substring(0, 12) : null;
+        this.host = null;
     }
     start() {
         const data = execSync(['docker', 'run', '--rm', '-it', '-d', `${this.img}:${this.ver}`].join(' '));
         this.id = new String(data).trim();
+        this.host = this.id.substring(0, 12);
         return this.id;
-    }
-    stop() {
-        return execSync(['docker', 'stop', this.id].join(' '));
     }
     cp_to_inst(src, dest) {
         return execSync(['docker', 'cp', src, `${this.id}:${dest}`].join(' '));
@@ -33,20 +28,21 @@ class SparkInstance {
     cp_to_host(src, dest) {
         return execSync(['docker', 'cp', `${this.id}:${src}`, dest].join(' '));
     }
-    submit(file) {
-        return execSync(['docker', 'exec', this.id, '/usr/src/app/bin/spark-submit', '--master', `spark://${this.host}:7077`, file].join(' '));
-    }
-    spark_start_and_submit(job) {
+    spark_start_and_attach(job) {
         try {
             this.start();
-            this.cp_to_inst(job.file, `/usr/src/app/job_${job.id}.py`);
-            this.submit(`/usr/src/app/job_${job.id}.py`);
-            this.cp_to_host("/usr/src/app/job_result.txt", `/usr/src/app/res_${job.id}.txt`);
-            this.stop();
-            return [0, job.id];
+            fs.writeFileSync(`./job_${job.id}.py`, job.file.buffer);
+            this.cp_to_inst(`./job_${job.id}.py`, `/usr/src/app/job_${job.id}.py`);
+            return [0, `/usr/src/app/job_${job.id}.py`];
         } catch (error) {
             return [1, `There was an error in job ${job.id}. stderr: ${error}`];
         }
+    }
+    static run(instance, job) {
+        return execSync(['docker', 'exec', instance.id, '/usr/src/app/bin/spark-submit', '--master', `spark://${instance.host}:7077`, job.path].join(' '));
+    }
+    static stop(id) {
+        return execSync(['docker', 'stop', id].join(' '));
     }
 }
 
@@ -54,9 +50,7 @@ class SparkJob {
     constructor(job_file) {
         this.id = crypto.randomUUID();
         this.file = job_file;
-    }
-    get res() {
-        return `/usr/src/app/res_${this.id}.txt`;
+        this.path = `/usr/src/app/job_${this.id}.py`;
     }
     *config() {
         yield this.id;

@@ -4,8 +4,7 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
-var indexRouter = require('./routes/index');
-var sparkRouter = require('./routes/spark')
+var sparkRouter = require('./routes/spark');
 
 var app = express();
 
@@ -19,8 +18,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/submit', sparkRouter);
-app.use('/', express.static('out'));
+app.use('/spark', sparkRouter);
+app.use('/', express.static('../client/out'));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

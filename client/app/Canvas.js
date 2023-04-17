@@ -1,6 +1,7 @@
 'use client';
-import { Container } from './Container.js'
-import props from 'prop-types'
+
+import { Container } from './Container.js';
+
 export const Canvas = ({
     boxes,
     setBoxes
@@ -9,5 +10,5 @@ export const Canvas = ({
         <div>
             <Container boxes={boxes} setBoxes={setBoxes} />
         </div>
-    )
+    );
 }

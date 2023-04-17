@@ -1,13 +1,15 @@
-import update from 'immutability-helper'
-import { useCallback } from 'react'
-import { useDrop } from 'react-dnd'
-import { Box } from './Box.js'
-import { ItemTypes } from './ItemTypes.js'
+import update from 'immutability-helper';
+import { useCallback } from 'react';
+import { useDrop } from 'react-dnd';
+import { Box } from './Box.js';
+import { ItemTypes } from './ItemTypes.js';
+
 const styles = {
   width: '100vw',
   height: '100vh',
   position: 'relative',
 }
+
 export const Container = ({
   boxes,
   setBoxes
@@ -23,7 +25,8 @@ export const Container = ({
       )
     },
     [boxes, setBoxes],
-  )
+  );
+
   const [, drop] = useDrop(
     () => ({
       accept: ItemTypes.BOX,
@@ -36,8 +39,9 @@ export const Container = ({
       },
     }),
     [moveBox],
-  )
-    return (
+  );
+
+  return (
     boxes ?
       <div ref={drop} style={styles}>
         {Object.keys(boxes).map((key) => {
@@ -58,5 +62,5 @@ export const Container = ({
         }
       </div> 
       : null
-  )
+  );
 }

@@ -3,10 +3,10 @@ const {
 } = require('node:worker_threads');
 
 if (isMainThread) {
-    module.exports = function schedule(file) {
+    module.exports = function stop(instance) {
         return new Promise((resolve, reject) => {
             const worker = new Worker(__filename, {
-                workerData: file,
+                workerData: instance,
             });
             worker.on('message', resolve);
             worker.on('error', reject);
@@ -17,10 +17,9 @@ if (isMainThread) {
         });
     };
 } else {
-    const { SparkJob, SparkInstance } = require('../lib/container');
-    const file = workerData;
-    const newJob = new SparkJob(file);
-    const newInstance = new SparkInstance(7077, "spark", "latest");
-    const [status, message] = newInstance.spark_start_and_attach(newJob);
-    parentPort.postMessage([status, message, newJob, newInstance]);
+    const { SparkInstance } = require('../lib/container');
+    const instance = workerData;
+    const out = SparkInstance.stop(instance.id);
+    const testOut = String.fromCharCode.apply(null, out).trim();
+    parentPort.postMessage(testOut == instance.id ? 0 : 1);
 }
