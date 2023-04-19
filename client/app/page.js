@@ -11,9 +11,11 @@ import { styles } from './styles';
 
 // Material UI
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { Box, Typography, AppBar, IconButton, Toolbar } from '@mui/material';
+import { Box, Typography, AppBar, IconButton, Toolbar, TextField } from '@mui/material';
+import { Popup } from 'reactjs-popup';
 import CssBaseline from '@mui/material/CssBaseline';
-import MenuIcon from '@mui/icons-material/Menu';
+import SettingsIcon from '@mui/icons-material/Settings';
+import CloseIcon from '@mui/icons-material/Close';
 
 const darkTheme = createTheme({
   palette: {
@@ -23,6 +25,18 @@ const darkTheme = createTheme({
 
 export default function Home() {
   const [boxes, setBoxes] = useState({});
+  const [img, setImg] = useState("");
+  const [ver, setVer] = useState("");
+
+  const updateImg = (e) => {
+    let updatedBoxes = {...boxes};
+    updatedBoxes[id].title = e.target.value;
+    setBoxes(updatedBoxes);
+  }
+
+  const updateVer = (e) => {
+    setBoxes();
+  }
 
   return (
     <ThemeProvider theme={darkTheme}>
@@ -32,19 +46,52 @@ export default function Home() {
         <Box sx={{ flexGrow: 1 }}>
           <AppBar position="static">
             <Toolbar>
-              <IconButton
-                size="large"
-                edge="start"
-                color="inherit"
-                aria-label="menu"
-                sx={{ mr: 2 }}
-              >
-                <MenuIcon />
-              </IconButton>
               <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                 Yesterday
               </Typography>
               <AddSource className='my-2' boxes={boxes} setBoxes={setBoxes} />
+              <Popup
+                trigger={
+                  <IconButton
+                    size="large"
+                    edge="start"
+                    color="inherit"
+                    aria-label="menu"
+                    sx={{ ml: 1 }}
+                  >
+                    <SettingsIcon />
+                  </IconButton>
+                }
+                modal
+                nested
+              >
+                {close => (
+                  <div className="container flex flex-col justify-start justify-items-start space-y-4 py-8 bg-neutral-900 rounded-lg border border-neutral-700 w-screen">
+                    <div className="flex justify-between">
+                      <div className="flex space-x-2">
+                        <IconButton
+                          size="medium"
+                        color="inherit"
+                        aria-label="menu"
+                        onClick={close}
+                        >
+                          <CloseIcon />
+                        </IconButton>
+                        <div className="self-center">
+                          <Typography variant="h5">
+                            Settings
+                          </Typography>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col space-y-4">
+                      <Typography variant="h6">Spark image: </Typography>
+                      <TextField fullWidth={true} variant="filled" label="Image" value={img} onChange={(e) => setImg(e.target.value)} />
+                      <TextField fullWidth={true} variant="filled" label="Tag" value={ver} onChange={(e) => setVer(e.target.value)} />
+                    </div>
+                  </div>
+                )}
+              </Popup>
             </Toolbar>
           </AppBar>
         </Box>
