@@ -20,7 +20,7 @@ router.post('/start_and_attach', upload.any(), function(req, res, next) {
       res.end(JSON.stringify({status: status}, null, 3));
     } else {
       res.writeHead(200);
-      res.end(JSON.stringify({status: status, id: job.id, file: file}, null, 3)); 
+      res.end(JSON.stringify({job: job, container: container}, null, 3)); 
     }
   });
 });
@@ -44,8 +44,10 @@ router.post('/stop', function(req, res, next) {
 
 router.post('/run', function(req, res, next) {
   const job_id = req.body.id;
+  const job_argv = req.body.argv;
   const container = global.jobs[job_id].container;
   const job = global.jobs[job_id].job;
+  job.argv = job_argv;
 
   run(container, job).then((exit) => {
     res.setHeader("Content-Type", "application/json");

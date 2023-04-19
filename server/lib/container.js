@@ -39,7 +39,7 @@ class SparkInstance {
         }
     }
     static run(instance, job) {
-        return execSync(['docker', 'exec', instance.id, '/usr/src/app/bin/spark-submit', '--master', `spark://${instance.host}:7077`, job.path].join(' '));
+        return execSync(['docker', 'exec', instance.id, '/usr/src/app/bin/spark-submit', '--master', `spark://${instance.host}:7077`, job.path, job.argv].join(' '));
     }
     static stop(id) {
         return execSync(['docker', 'stop', id].join(' '));
@@ -51,6 +51,7 @@ class SparkJob {
         this.id = crypto.randomUUID();
         this.file = job_file;
         this.path = `/usr/src/app/job_${this.id}.py`;
+        this.argv = "";
     }
     *config() {
         yield this.id;

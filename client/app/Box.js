@@ -7,7 +7,7 @@ import axios from 'axios';
 import { ItemTypes } from './ItemTypes.js';
 
 // Material UI
-import { TextField, IconButton, Typography, CircularProgress, Tooltip, Accordion, AccordionSummary, AccordionDetails, Input } from '@mui/material';
+import { TextField, IconButton, Divider, Typography, CircularProgress, Tooltip, Accordion, AccordionSummary, AccordionDetails, Input } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -38,6 +38,7 @@ export const Box = ({
   );
   
   const [job, setJob] = useState(null);
+  const [argv, setArgv] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   if (isDragging) {
@@ -45,9 +46,16 @@ export const Box = ({
   }
 
   const updateSourceTitle = (e) => {
-    let updatedBoxes = {...boxes}
+    let updatedBoxes = {...boxes};
     updatedBoxes[id].title = e.target.value;
     setBoxes(updatedBoxes);
+  }
+
+  const updateJobArgv = (e) => {
+    let updatedJob = job;
+    updatedJob.job.argv = e.target.value;
+    setArgv(e.target.value);
+    setJob(updatedJob);
   }
 
   const handleChange = async (e) => {
@@ -60,10 +68,9 @@ export const Box = ({
           'Content-Type': 'multipart/form-data'
         }
       }).then((res) => {
-        console.log(res);
         if (res.status == 200) {
           const data = res.data;
-          setJob({id: data.id, file: data.file});
+          setJob(data);
         }
       });
     }
@@ -71,13 +78,12 @@ export const Box = ({
 
   const killContainer = async () => {
     axios.post('/spark/stop', {
-      id: job.id
+      id: job.job.id
     }, {
       headers: {
         'Content-Type': 'application/json'
       }
     }).then((res) => {
-      console.log(res);
       if (res.status == 200) {
         setJob(null);
       }
@@ -86,7 +92,8 @@ export const Box = ({
 
   const runJob = async () => {
     axios.post('/spark/run', {
-      id: job.id
+      id: job.job.id,
+      argv: job.job.argv
     }, {
       headers: {
         'Content-Type': 'application/json'
@@ -154,6 +161,7 @@ export const Box = ({
             }
             {job && 
               <div className="max-w-full">
+                <TextField fullWidth={true} variant="filled" label="Arguments" value={argv} onChange={updateJobArgv} sx={{pb: 4}}/>
                 <Accordion>
                   <AccordionSummary
                     expandIcon={<ExpandMoreIcon />}
@@ -163,9 +171,19 @@ export const Box = ({
                     <Typography>Metadata</Typography>
                   </AccordionSummary>
                   <AccordionDetails>
-                    <Typography>
-                      {JSON.stringify(job)}
-                    </Typography>
+                    <div className="flex flex-col max-w-full justify-between">
+                      <div className="flex flex-col max-w-full">
+                        <Typography variant="h6">Job: </Typography>
+                        <Typography>{job.job.id}</Typography>
+                        <Typography>{job.job.path}</Typography>
+                      </div>
+                      <Divider />
+                      <div className="flex flex-col max-w-full">
+                        <Typography variant="h6">Container: </Typography>
+                        <Typography>{job.container.id}</Typography>
+                        <Typography>{job.container.img}:{job.container.ver}</Typography>
+                      </div>
+                    </div>
                   </AccordionDetails>
                 </Accordion>
               </div>
