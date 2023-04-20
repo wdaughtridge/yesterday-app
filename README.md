@@ -12,4 +12,4 @@ If you don't want to run the server in a container (like for development), run `
 
 Once you have either 1) the server container running, or 2) the `npm run dev` going, access `localhost:3000` in your browser and you will see 
 
-A video demo for getting the Node server going and using the app can be found here: https://youtu.be/bzJES890Sho
+A video demo for getting the Node server going and using the app can be found here: https://youtu.be/b9I-t4kVMEA
