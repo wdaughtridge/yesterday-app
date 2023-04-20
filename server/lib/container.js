@@ -33,7 +33,8 @@ class SparkInstance {
     }
     static cp_to_inst(src, dest, buffer, id) {
         fs.writeFileSync(src, buffer);
-        return execSync(['docker', 'cp', src, `${id}:${dest}`].join(' '));
+        const exit = execSync(['docker', 'cp', src, `${id}:${dest}`].join(' '));
+        return [exit, dest];
     }
     static cp_to_host(src, dest) {
         return execSync(['docker', 'cp', `${this.id}:${src}`, dest].join(' '));
@@ -56,7 +57,8 @@ class SparkJob {
     *config() {
         yield this.id;
         yield this.file;
-        yield this.res;
+        yield this.path;
+        yield this.argv;
     }
 }
 

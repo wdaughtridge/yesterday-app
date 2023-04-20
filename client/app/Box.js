@@ -7,7 +7,7 @@ import axios from 'axios';
 import { ItemTypes } from './ItemTypes.js';
 
 // Material UI
-import { TextField, IconButton, Divider, Typography, CircularProgress, Tooltip, Accordion, AccordionSummary, AccordionDetails, Input, Snackbar, Alert, Slide, Backdrop} from '@mui/material';
+import { TextField, IconButton, Divider, Typography, CircularProgress, Tooltip, Accordion, AccordionSummary, AccordionDetails, Input, Snackbar, Alert, Fade} from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -35,9 +35,11 @@ export const Box = ({
       }),
     }),
     [id, left, top],
-  )
+  );
   
   const [job, setJob] = useState(null);
+  const [container, setContainer] = useState(null);
+  const [source, setSource] = useState(null);
   const [argv, setArgv] = useState("");
   const [open, setOpen] = useState(false);
   const [alertMsg, setAlertMsg] = useState("");
@@ -54,15 +56,20 @@ export const Box = ({
     setBoxes(updatedBoxes);
   }
 
+  const toggleSnack = (msg="", sev="") => {
+    setAlertMsg(msg);
+    setSeverity(sev);
+    setOpen(!open);
+  }
+
   const updateJobArgv = (e) => {
     let updatedJob = job;
-    updatedJob.job.argv = e.target.value;
+    updatedJob.argv = e.target.value;
     setArgv(e.target.value);
     setJob(updatedJob);
   }
 
   const handleChange = async (e) => {
-    setIsLoading(true);
     e.preventDefault();
     if (e.target.files && e.target.files[0]) {
       axios.post('/spark/start_and_attach', {
@@ -74,27 +81,22 @@ export const Box = ({
       }).then((res) => {
         if (res.status == 200) {
           const data = res.data;
-          setJob(data);
-          setAlertMsg("Job file attached to Spark instance.");
-          setSeverity("success");
-          setOpen(true);
+          setJob(data.job);
+          setContainer(data.container);
+          toggleSnack("Job file attached to cluster", "success");
         } else {
-          setAlertMsg("There was an error in attaching the job file!");
-          setSeverity("error");
-          setOpen(true);
+
         }
-        setIsLoading(false);
       });
     }
   }
 
   const loadSource = async (e) => {
-    setIsLoading(true);
     e.preventDefault();
     if (e.target.files && e.target.files[0]) {
       axios.post('/spark/load_source', {
         file: e.target.files[0],
-        data: {job: job.job, container: job.container}
+        data: {job: job, container: container}
       }, {
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -102,24 +104,18 @@ export const Box = ({
       }).then((res) => {
         if (res.status == 200) {
           const data = res.data;
-          setJob(data);
-          setAlertMsg("Source data attached to Spark instance.");
-          setSeverity("success");
-          setOpen(true);
+          setSource(data.dest);
+          toggleSnack("Source data attached to cluster", "success");
         } else {
-          setAlertMsg("There was an error in attaching the job file!");
-          setSeverity("error");
-          setOpen(true);
+
         }
-        setIsLoading(false);
       });
     }
   }
 
   const killContainer = async () => {
-    setIsLoading(true);
     axios.post('/spark/stop', {
-      id: job.job.id
+      id: job.id
     }, {
       headers: {
         'Content-Type': 'application/json'
@@ -127,29 +123,24 @@ export const Box = ({
     }).then((res) => {
       if (res.status == 200) {
         setJob(null);
-        setAlertMsg("Spark instance was shut down successfully.");
-        setSeverity("success");
-        setOpen(true);
+        setContainer(null);
+        toggleSnack("Cluster has been stopped", "success");
       } else {
-        setAlertMsg("There was an error in stopping the Spark instance!");
-        setSeverity("error");
-        setOpen(true);
+
       }
-      setIsLoading(false);
     });
   }
 
   const runJob = async () => {
-    setIsLoading(true);
     axios.post('/spark/run', {
-      id: job.job.id,
-      argv: job.job.argv
+      id: job.id,
+      argv: job.argv
     }, {
       headers: {
         'Content-Type': 'application/json'
       }
     }).then(() => {
-      setIsLoading(false);
+      toggleSnack("Job has been run on cluster", "success");
     });
   }
 
@@ -158,117 +149,124 @@ export const Box = ({
       return;
     }
     setOpen(false);
-  }
+  };
 
   return (
-    <div
-      ref={drag}
-      style={{ ...style, left, top }}
-      data-testid="box"
-      className="bg-neutral-900 rounded-lg border border-neutral-700 flex"
-    >
-      <Popup
-        trigger={<button className="py-4 px-4">{boxes[id].title}</button>}
-        modal
-        nested
+    <div>
+      <Snackbar onClose={handleClose} autoHideDuration={3000} anchorOrigin={{vertical: 'top',horizontal: 'center'}} open={open} >
+        <Alert variant="filled" onClose={handleClose} severity={severity} sx={{ width: '100%' }}>
+          {alertMsg}
+        </Alert>
+      </Snackbar>
+      <div
+        ref={drag}
+        style={{ ...style, left, top }}
+        data-testid="box"
+        className="bg-neutral-900 rounded-lg border border-neutral-700 flex"
       >
-        {close => (
-          <div className="container flex flex-col justify-start justify-items-start space-y-4 py-8 bg-neutral-900 rounded-lg border border-neutral-700 w-screen">
-            <Snackbar anchorOrigin={{vertical: 'top',horizontal: 'center'}} open={open} autoHideDuration={6000} TransitionComponent={(props) => {return <Slide {...props} direction="down" />;}} >
-              <Alert variant="filled" onClose={handleClose} severity={severity} sx={{ width: '100%' }}>
-                {alertMsg}
-              </Alert>
-            </Snackbar>
-            <div className="flex justify-between">
-              <div className="flex space-x-2">
-                <IconButton
-                  size="medium"
-                  color="inherit"
-                  aria-label="menu"
-                  onClick={close}
-                >
-                  <CloseIcon />
-                </IconButton>
-                <div className="self-center">
-                  <Typography variant="h5">
-                    Spark instance config
-                  </Typography>
+        <Popup
+          trigger={<button className="py-4 px-4">{boxes[id].title}</button>}
+          modal
+          nested
+        >
+          {close => (
+            <Fade in={close}>
+            <div className="container flex flex-col justify-start justify-items-start space-y-4 py-8 bg-neutral-900 rounded-lg border border-neutral-700 w-screen">
+              <div className="flex justify-between">
+                <div className="flex space-x-2">
+                  <IconButton
+                    size="medium"
+                    color="inherit"
+                    aria-label="menu"
+                    onClick={close}
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                  <div className="self-center">
+                    <Typography variant="h5">
+                      Spark instance config
+                    </Typography>
+                  </div>
                 </div>
+                {job &&
+                  <div>
+                    <IconButton
+                      size="medium"
+                      color="inherit"
+                      aria-label="stop"
+                      onClick={killContainer}
+                    >
+                      <Tooltip placement="right" title="Stop Spark cluster.">
+                        <StopCircleIcon />
+                      </Tooltip>
+                    </IconButton>
+                    <IconButton
+                      size="medium"
+                      color="inherit"
+                      aria-label="run"
+                      onClick={runJob}
+                    >
+                      <Tooltip placement="right" title="Run job on Spark cluster.">
+                        <PlayCircleIcon />
+                      </Tooltip>
+                    </IconButton>
+                  </div>
+                }
               </div>
+              <div>
+                  <TextField fullWidth={true} variant="filled" label="Name" value={boxes[id].title} onChange={updateSourceTitle} />
+              </div>
+              {!job &&
+                <Input type="file" onChange={handleChange} />
+              }
               {job &&
-                <div>
-                  <IconButton
-                    size="medium"
-                    color="inherit"
-                    aria-label="stop"
-                    onClick={killContainer}
-                  >
-                    <Tooltip placement="right" title="Stop Spark cluster.">
-                      <StopCircleIcon />
-                    </Tooltip>
-                  </IconButton>
-                  <IconButton
-                    size="medium"
-                    color="inherit"
-                    aria-label="run"
-                    onClick={runJob}
-                  >
-                    <Tooltip placement="right" title="Run job on Spark cluster.">
-                      <PlayCircleIcon />
-                    </Tooltip>
-                  </IconButton>
+              <Fade in={job}>
+                <div className="max-w-full flex space-y-2 flex-col">
+                  <TextField fullWidth={true} variant="filled" label="Arguments" value={argv} onChange={updateJobArgv} />
+                  {!source &&
+                    <Fade in={!source}>
+                      <Input type="file" onChange={loadSource} />
+                    </Fade>
+                  }
+                  {source &&
+                    <Fade in={source}>
+                      <Typography>
+                        {source}
+                      </Typography>
+                    </Fade>
+                  }
+                  <Accordion>
+                    <AccordionSummary
+                      expandIcon={<ExpandMoreIcon />}
+                      aria-controls="panel1a-content"
+                      id="panel1a-header"
+                    >
+                      <Typography>Metadata</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <div className="flex flex-col max-w-full justify-between">
+                        <div className="flex flex-col max-w-full">
+                          <Typography variant="h6">Job: </Typography>
+                          <Typography>{job.id}</Typography>
+                          <Typography>{job.path}</Typography>
+                        </div>
+                        <Divider />
+                        <div className="flex flex-col max-w-full">
+                          <Typography variant="h6">Container: </Typography>
+                          <Typography>{container.id}</Typography>
+                          <Typography>{container.img}:{container.ver}</Typography>
+                        </div>
+                      </div>
+                    </AccordionDetails>
+                  </Accordion>
                 </div>
+              </Fade>
               }
             </div>
-            <div>
-                <TextField fullWidth={true} variant="filled" label="Name" value={boxes[id].title} onChange={updateSourceTitle} />
-            </div>
-            <Snackbar open={isLoading} TransitionComponent={(props) => {return <Slide {...props} direction="right" />;}} >
-              <div className="flex space-x-2 bg-neutral-800 p-4 rounded-sm">
-                <div className="self-center">
-                  <Typography>
-                    Executing Spark instance task.
-                  </Typography>
-                </div>
-                <CircularProgress />
-              </div>
-            </Snackbar>
-            {!job &&
-              <Input type="file" onChange={handleChange} />
-            }
-            {job && 
-              <div className="max-w-full flex space-y-2 flex-col">
-                <TextField fullWidth={true} variant="filled" label="Arguments" value={argv} onChange={updateJobArgv} />
-                <Input type="file" onChange={loadSource} />
-                <Accordion>
-                  <AccordionSummary
-                    expandIcon={<ExpandMoreIcon />}
-                    aria-controls="panel1a-content"
-                    id="panel1a-header"
-                  >
-                    <Typography>Metadata</Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <div className="flex flex-col max-w-full justify-between">
-                      <div className="flex flex-col max-w-full">
-                        <Typography variant="h6">Job: </Typography>
-                        <Typography>{job.job.id}</Typography>
-                        <Typography>{job.job.path}</Typography>
-                      </div>
-                      <Divider />
-                      <div className="flex flex-col max-w-full">
-                        <Typography variant="h6">Container: </Typography>
-                        <Typography>{job.container.id}</Typography>
-                        <Typography>{job.container.img}:{job.container.ver}</Typography>
-                      </div>
-                    </div>
-                  </AccordionDetails>
-                </Accordion>
-              </div>
-            }
-          </div>
-        )}
-      </Popup>
+            </Fade>
+          )}
+        </Popup>
+      </div>
     </div>
   );
 }

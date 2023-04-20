@@ -19,6 +19,6 @@ if (isMainThread) {
 } else {
     const { SparkInstance } = require('../lib/container');
     const [file, job, container] = workerData;
-    const message = SparkInstance.cp_to_inst(`./job_${job.id}.csv`, `/usr/src/app/job_${job.id}.csv`, file.buffer, container.id);
-    parentPort.postMessage([0, message, `/usr/src/app/job_${job.id}.csv`]);
+    const [exit, dest] = SparkInstance.cp_to_inst(`./job_${job.id}.csv`, `/usr/src/app/job_${job.id}.csv`, file.buffer, container.id);
+    parentPort.postMessage([exit, dest]);
 }

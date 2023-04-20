@@ -21,6 +21,6 @@ if (isMainThread) {
     const file = workerData;
     const newJob = new SparkJob(file);
     const newInstance = new SparkInstance(7077, "spark", "latest");
-    const [status, message] = newInstance.spark_start_and_attach(newJob);
-    parentPort.postMessage([status, message, newJob, newInstance]);
+    const [exit, message] = newInstance.spark_start_and_attach(newJob);
+    parentPort.postMessage([exit, message, newJob, newInstance]);
 }
