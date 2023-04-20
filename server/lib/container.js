@@ -22,21 +22,21 @@ class SparkInstance {
         this.host = this.id.substring(0, 12);
         return this.id;
     }
-    cp_to_inst(src, dest) {
-        return execSync(['docker', 'cp', src, `${this.id}:${dest}`].join(' '));
-    }
-    cp_to_host(src, dest) {
-        return execSync(['docker', 'cp', `${this.id}:${src}`, dest].join(' '));
-    }
     spark_start_and_attach(job) {
         try {
             this.start();
-            fs.writeFileSync(`./job_${job.id}.py`, job.file.buffer);
-            this.cp_to_inst(`./job_${job.id}.py`, `/usr/src/app/job_${job.id}.py`);
+            SparkInstance.cp_to_inst(`./job_${job.id}.py`, `/usr/src/app/job_${job.id}.py`, job.file.buffer, this.id);
             return [0, `/usr/src/app/job_${job.id}.py`];
         } catch (error) {
             return [1, `There was an error in job ${job.id}. stderr: ${error}`];
         }
+    }
+    static cp_to_inst(src, dest, buffer, id) {
+        fs.writeFileSync(src, buffer);
+        return execSync(['docker', 'cp', src, `${id}:${dest}`].join(' '));
+    }
+    static cp_to_host(src, dest) {
+        return execSync(['docker', 'cp', `${this.id}:${src}`, dest].join(' '));
     }
     static run(instance, job) {
         return execSync(['docker', 'exec', instance.id, '/usr/src/app/bin/spark-submit', '--master', `spark://${instance.host}:7077`, job.path, job.argv].join(' '));
